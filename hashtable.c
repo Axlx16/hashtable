@@ -20,7 +20,9 @@ hashTable * htCreate() {
 
 bool heFree(hashEntry *he) {
     if (he != NULL) {
-        heFree(he->next);
+        if (he->next != NULL) {
+            heFree(he->next);
+        }
         free(he);
     }
 }
@@ -72,14 +74,15 @@ bool htInsert(hashTable *ht, int key, int *value) {
     int hashVal = hashFunc(key);
 
     hashEntry *he = heCreate(key, value);
-
+    
     if (ht->entries[hashVal] == NULL) {
         ht->entries[hashVal] = he;
         return true;
     }
 
 
-    ht->entries[hashVal]->next = (hashEntry *)he;
+    he->next = ht->entries[hashVal];
+    ht->entries[hashVal] = he;
 
     return true; 
 
@@ -130,6 +133,34 @@ hashEntry * htLookup(hashTable *ht, int key) {
     return NULL;
 }
 
+bool htRemove(hashTable *ht, int key) {
+    int hashVal = hashFunc(key); 
+    if (ht->entries[hashVal] != NULL) { 
+          
+        hashEntry *head = ht->entries[hashVal];
+        if (head->key == key) {
+            ht->entries[hashVal] = head->next;
+            return true;
+        }         
+
+        while (head->next != NULL) {
+            if (((hashEntry *)(head->next))->key == key) {
+                hashEntry *tmp = head->next;
+                head->next = tmp->next;
+                free(tmp);
+                return true;
+            }
+            head = head->next;
+        } 
+        
+        printf("--NO ENTRY FOUND--\n"); 
+        
+        return false;
+    }
+
+    return false;
+}
+
 bool htEmpty(hashTable *ht) {
     for (int i = 0; i < HASHTABLE_SIZE; ++i) {
         if (ht->entries[i] != NULL) {
@@ -155,9 +186,26 @@ int main() {
  
     hashEntry *output2 = htLookup(ht, 4959);
 
-    printf("%d\n", output2->key);
-
+    htInsert(ht, 4969, intArr);
+ 
+    hashEntry *output3 = htLookup(ht, 4969);
     
+    /* 99% sure this works well */ 
+    hashEntry *he_temp = ht->entries[9]->next;
+    hashEntry *he_temp2 = he_temp->next;
+    printf("%d\n", ht->entries[9]->key); 
+    printf("%d\n", he_temp->key);
+    printf("%d\n", he_temp2->key);
+
+    htRemove(ht, 4969);
+
+    printf("--AFTER REMOVING ELEMENT--\n");
+    for (int i = 0; i < 2; ++i) {
+        printf("%d\n", ht->entries[9]->key);
+        ht->entries[9] = ht->entries[9]->next;
+    }
+
+    /* TEST TO ITERATATE THROUGH ALL KEYS*/
     // htInsert(ht, 4950, intArr);
     
     // hashEntry *output3 = htLookup(ht, 4950); 
